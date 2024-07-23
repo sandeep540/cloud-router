@@ -1,12 +1,18 @@
 package main
 
 import (
+	"cloud-router/bootstrap"
 	"log/slog"
 	"net/http"
 	"os"
 )
 
 func main() {
+
+	app := bootstrap.App()
+	env := app.Env
+
+	port := env.ServerAddress
 
 	v1 := http.NewServeMux()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -19,7 +25,7 @@ func main() {
 		http.Redirect(w, r, "https://yahoo.com", http.StatusSeeOther)
 	})
 
-	logger.Info("Spinning Server on Port 8000")
-	http.ListenAndServe(":8000", v1)
+	logger.Info("Spinning Server on Port " + port)
+	http.ListenAndServe(port, v1)
 
 }
