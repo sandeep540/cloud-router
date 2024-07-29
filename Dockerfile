@@ -9,7 +9,7 @@
 ################################################################################
 # Create a stage for building the application.
 ARG GO_VERSION=1.22.5
-FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS build
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS build
 WORKDIR /src
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
@@ -28,10 +28,16 @@ ARG TARGETARCH
 # Build the application.
 # Leverage a cache mount to /go/pkg/mod/ to speed up subsequent builds.
 # Leverage a bind mount to the current directory to avoid having to copy the
-# source code into the container.
+# source code into the container. 
+# go build -o /bin/server .
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,target=. \
-    CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o /bin/server .
+    CGO_ENABLED=0 GOARCH=$TARGETARCH go build -ldflags="-s -w" -o /bin/server . 
+
+# UPX: You can use UPX to compress the Go binary further. Add this to your Dockerfile:
+# RUN apt-get update && apt-get install -y upx-ucl libx11-dev
+RUN apk add --no-cache upx
+RUN upx --ultra-brute /bin/server 
 
 ################################################################################
 # Create a new stage for running the application that contains the minimal
